@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabrika Güvenlik Merkezi</title>
+<style>
+:root {
+  --bg: #f4f6fb;
+  --s1: #ffffff;
+  --s2: #f0f2f8;
+  --s3: #e8eaf2;
+  --border: #e2e5f0;
+  --text: #1a1d2e;
+  --muted: #7b82a0;
+  --accent: #7c6ff7;
+  --accent2: #a59ef9;
+  --teal: #0eb8a0;
+  --success: #22c76a;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --purple-light: #f0eeff;
+  --shadow: 0 2px 12px rgba(120,110,200,.10);
+  --shadow-sm: 0 1px 4px rgba(120,110,200,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0;box-shadow:var(--shadow-sm)}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr h1{font-size:15px;font-weight:700;color:var(--text)}
+.logo{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0}
+.live-badge{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--success);background:#edfbf3;padding:3px 9px;border-radius:20px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hdr-right{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.hdr-stat{background:var(--s2);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;color:var(--text)}
+.lat-chip{background:var(--purple-light);color:var(--accent);padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+#health-chip{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;background:#edfbf3;color:var(--success)}
+#health-chip.down{background:#fef2f2;color:var(--danger)}
+
+/* ── Layout ── */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:248px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sb-sec{padding:12px 14px 6px}
+.sb-title{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:8px}
+.cam-list{overflow-y:auto;padding:0 8px 6px}
+.cam-item{padding:9px 10px;border-radius:10px;margin-bottom:3px;cursor:pointer;transition:background .15s;border:1.5px solid transparent}
+.cam-item:hover{background:var(--s2)}
+.cam-item.streaming{background:var(--purple-light);border-color:var(--accent2)}
+.cam-dot{width:7px;height:7px;border-radius:50%;background:var(--border);display:inline-block;margin-right:7px;transition:background .3s;flex-shrink:0}
+.cam-item.streaming .cam-dot{background:var(--success)}
+.cam-name{font-size:12px;font-weight:600;color:var(--text)}
+.cam-loc{font-size:10px;color:var(--muted);margin-top:1px}
+.cam-tags{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+.tag{padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600}
+.t-whep{background:#ebe8ff;color:var(--accent)}
+.t-rec{background:#e8f8ef;color:#16a34a}
+.t-off{background:var(--s3);color:var(--muted)}
+.t-lat{background:#e8f8f5;color:var(--teal)}
+
+/* ── IoT Panel ── */
+.iot-panel{padding:0 8px 8px;overflow-y:auto;max-height:240px}
+.sensor-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:5px;transition:border-color .3s}
+.sensor-card.warn-state{border-color:var(--warn);background:#fffbeb}
+.sensor-card.danger-state{border-color:var(--danger);background:#fef2f2}
+.sc-row{display:flex;align-items:center;justify-content:space-between}
+.sc-name{font-size:11px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
+.sc-val{font-size:15px;font-weight:700;font-family:monospace}
+.sc-unit{font-size:9px;font-weight:400;color:var(--muted)}
+.sc-status{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600}
+.st-ok{background:#e8f8ef;color:#16a34a}
+.st-warn{background:#fffbeb;color:#d97706}
+.st-danger{background:#fef2f2;color:var(--danger)}
+.sc-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:5px}
+.sc-fill{height:100%;border-radius:2px;transition:width .8s ease,background .5s}
+
+/* ── Alarm log ── */
+.alarm-log{overflow-y:auto;flex:1;padding:0 8px 8px;min-height:60px}
+.al-item{padding:6px 9px;border-radius:8px;margin-bottom:3px;font-size:11px;border-left:3px solid;background:var(--s2)}
+.al-info{border-color:var(--accent);background:var(--purple-light)}
+.al-warning{border-color:var(--warn);background:#fffbeb}
+.al-danger{border-color:var(--danger);background:#fef2f2}
+.al-msg{color:var(--text);line-height:1.3}
+.al-time{color:var(--muted);font-size:9px;margin-top:2px}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+
+/* AI Detection Panel */
+.ai-panel{background:var(--s1);border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0;display:none}
+.ai-panel.active{display:block}
+.ai-panel-title{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.ai-detections{display:flex;gap:8px;flex-wrap:wrap}
+.ai-det-card{padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;border:1.5px solid}
+.ai-det-fire{background:#fef2f2;border-color:var(--danger);color:var(--danger)}
+.ai-det-smoke{background:#fffbeb;border-color:var(--warn);color:#d97706}
+.ai-det-info{background:var(--purple-light);border-color:var(--accent);color:var(--accent)}
+.ai-cam-label{font-size:10px;opacity:.7}
+.ai-conf-bar{height:3px;width:60px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:2px}
+.ai-conf-fill{height:100%;border-radius:2px;transition:width .3s}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--s1);border-bottom:1px solid var(--border);flex-shrink:0}
+.btn{padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--s1);color:var(--text);transition:all .15s;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--purple-light)}
+.btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-green{border-color:var(--success);color:var(--success)}
+.btn-green:hover{background:var(--success);color:#fff}
+.btn-red{border-color:var(--danger);color:var(--danger)}
+.btn-red:hover{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.sep{width:1px;height:22px;background:var(--border);margin:0 2px}
+
+.proto-toggle{display:flex;background:var(--s2);border-radius:8px;padding:2px;gap:2px;border:1px solid var(--border)}
+.proto-btn{padding:4px 12px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .15s}
+.proto-btn.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(124,111,247,.3)}
+
+/* ── Grid ── */
+.video-grid{flex:1;overflow:auto;padding:10px;display:grid;gap:8px;align-content:start}
+.grid-1{grid-template-columns:1fr}
+.grid-4{grid-template-columns:repeat(2,1fr)}
+.grid-6{grid-template-columns:repeat(3,1fr)}
+
+/* ── Video card ── */
+.vcell{background:var(--s1);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:border-color .3s,box-shadow .3s}
+.vcell.live{border-color:var(--success);box-shadow:0 2px 12px rgba(34,199,106,.15)}
+.vcell-top{position:relative}
+.vcell-hdr{position:absolute;top:0;left:0;right:0;z-index:2;padding:8px 10px;background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+.vcell-name{font-size:11px;font-weight:700;color:#fff;display:flex;align-items:center;gap:5px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;animation:pulse 1s infinite}
+.vcell video{width:100%;aspect-ratio:16/9;object-fit:cover;background:#1a1d2e;display:block;cursor:pointer;border-radius:0}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:16/9;gap:8px;color:var(--muted);font-size:11px;background:var(--s2)}
+.ph-icon{font-size:28px;opacity:.4}
+.ai-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.ai-banner{position:absolute;top:0;left:0;right:0;padding:6px 10px;font-size:12px;font-weight:700;color:#fff;text-align:center;z-index:4;display:none}
+.ai-banner.fire{background:rgba(220,38,38,.85);display:block}
+.ai-banner.smoke{background:rgba(217,119,6,.85);display:block}
+.ai-badge{position:absolute;bottom:44px;right:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(220,38,38,.9);color:#fff;display:none}
+.ai-badge.active{display:block}
+.vcell-footer{padding:7px 10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-shrink:0}
+.vcell-meta{font-size:10px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.lat-pill{font-size:9px;padding:1px 6px;border-radius:8px;background:#e8f8f5;color:var(--teal);font-family:monospace;font-weight:600}
+.vcell-btns{display:flex;gap:3px}
+.icon-btn{background:var(--s2);border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:3px 7px;font-size:10px;cursor:pointer;transition:all .15s}
+.icon-btn:hover{background:var(--purple-light);color:var(--accent);border-color:var(--accent2)}
+
+/* ── Broadcast bar ── */
+.bcast-bar{padding:8px 14px;background:var(--s1);border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+#local-preview{width:96px;border-radius:8px;border:2px solid var(--accent);background:#1a1d2e;flex-shrink:0}
+select{background:var(--s2);border:1.5px solid var(--border);color:var(--text);padding:5px 9px;border-radius:8px;font-size:11px;outline:none;font-weight:500}
+select:focus{border-color:var(--accent)}
+#stream-status{font-size:10px;padding:4px 10px;border-radius:20px;background:var(--s2);color:var(--muted);font-weight:600}
+#stream-status.live{background:#edfbf3;color:var(--success)}
+.pipe-label{font-size:10px;color:var(--muted);background:var(--s2);padding:3px 8px;border-radius:20px}
+
+/* ── Modal ── */
+.modal-ov{position:fixed;inset:0;background:rgba(26,29,46,.5);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-ov.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:16px;width:700px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(120,110,200,.15)}
+.modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-hdr h2{font-size:15px;font-weight:700}
+.modal-body{overflow-y:auto;padding:12px 16px}
+.rec-table{width:100%;border-collapse:collapse;font-size:11px}
+.rec-table th{text-align:left;padding:7px 10px;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--border)}
+.rec-table td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.rec-table tr:hover td{background:var(--purple-light)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="logo">🏭</div>
+    <h1>Fabrika Güvenlik Merkezi</h1>
+    <div class="live-badge"><span class="live-dot"></span> CANLI</div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-stat">📷 <span id="stream-count">0</span>/6 aktif</span>
+    <span class="lat-chip" id="proto-label">⚡ WHEP ~200ms</span>
+    <span id="health-chip">✅ MediaMTX</span>
+    <span style="font-weight:600" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-sec"><div class="sb-title">Kameralar</div></div>
+    <div class="cam-list" id="cam-list"></div>
+
+    <div class="sb-sec" style="border-top:1px solid var(--border)">
+      <div class="sb-title" style="display:flex;justify-content:space-between">
+        <span>IoT Sensörler</span>
+        <span class="tag t-whep" id="mqtt-badge" style="font-size:8px">SİMÜLASYON</span>
+      </div>
+    </div>
+    <div class="iot-panel" id="iot-panel"></div>
+
+    <div class="sb-sec" style="border-top:1px solid var(--border)">
+      <div class="sb-title">Alarmlar</div>
+    </div>
+    <div class="alarm-log" id="alarm-log"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="btn" onclick="setGrid(1)" id="g1">⬜ Tekli</button>
+      <button class="btn" onclick="setGrid(4)" id="g4">⊞ 2×2</button>
+      <button class="btn active" onclick="setGrid(6)" id="g6">⊟ 3 kamera</button>
+      <div class="sep"></div>
+      <div class="proto-toggle">
+        <button class="proto-btn active" id="pb-whep" onclick="setProto('whep')">⚡ WHEP</button>
+        <button class="proto-btn" id="pb-hls" onclick="setProto('hls')">📺 HLS</button>
+      </div>
+      <div class="sep"></div>
+      <button class="btn btn-green" onclick="startBroadcast()" id="btn-bc">▶ Yayın Başlat</button>
+      <button class="btn btn-red" onclick="stopBroadcast()" id="btn-stop" style="display:none">■ Durdur</button>
+      <div class="sep"></div>
+      <button class="btn" onclick="openRec()">🗂 Kayıtlar</button>
+      <button class="btn btn-red" onclick="sendAlarm('danger')">🚨 Alarm</button>
+      <div style="flex:1"></div>
+      <span id="iot-status" style="font-size:10px;color:var(--teal);font-weight:600">● MQTT simülasyonu</span>
+    </div>
+
+    <!-- Grid -->
+    <div class="video-grid grid-6" id="video-grid"></div>
+
+    <!-- AI Detection Panel -->
+    <div class="ai-panel" id="ai-panel">
+      <div class="ai-panel-title">
+        <span>🤖 AI Tespit — Roboflow Fire Model</span>
+        <span id="ai-panel-time" style="font-weight:400"></span>
+      </div>
+      <div class="ai-detections" id="ai-detections">
+        <span style="font-size:11px;color:var(--muted)">Tespit bekleniyor...</span>
+      </div>
+    </div>
+
+    <!-- Broadcast bar -->
+    <div class="bcast-bar">
+      <video id="local-preview" autoplay muted playsinline></video>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:500">Yayın kanalı</div>
+        <select id="bcast-ch">
+          <option value="test">Test Kamerası</option>
+          <option value="kamera1">Kamera 1 — Üretim Hattı A</option>
+          <option value="kamera2">Kamera 2 — Depo Girişi</option>
+        </select>
+      </div>
+      <span id="stream-status">⏸ Beklemede</span>
+      <div style="flex:1"></div>
+      <span class="pipe-label">WHIP → MediaMTX → WHEP / HLS / .ts kayıt</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-ov" id="rec-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2>🗂 Kayıt Arşivi</h2>
+      <button class="btn" onclick="closeRec()">✕ Kapat</button>
+    </div>
+    <div class="modal-body">
+      <table class="rec-table">
+        <thead><tr><th>Kamera</th><th>Dosya</th><th>Boyut</th><th>Tarih</th><th>İşlem</th></tr></thead>
+        <tbody id="rec-tbody"></tbody>
+      </table>
+      <div id="rec-empty" style="text-align:center;color:var(--muted);padding:28px;font-size:12px">Henüz kayıt yok</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API       = 'http://localhost:8000/api';
+const WHIP_BASE = 'http://localhost:8889';
+const WHEP_BASE = 'http://localhost:8889';
+const HLS_BASE  = 'http://localhost:8888';
+const ICE       = { iceServers:[{urls:'stun:stun.l.google.com:19302'}] };
+
+let cameras=[], whipPC=null, localStream=null;
+let viewerPCs={}, hlsInst={}, proto='whep', ws=null;
+
+window.addEventListener('DOMContentLoaded',()=>{
+  startClock(); connectWS(); loadCameras(); loadAlarms();
+  checkHealth(); setInterval(checkHealth,5000);
+  initPreview(); initIoT();
+});
+
+// WebSocket
+function connectWS(){
+  ws=new WebSocket('ws://localhost:8000/ws');
+  ws.onmessage=e=>{
+    const m=JSON.parse(e.data);
+    if(m.type==='cameras_update'){cameras=m.cameras;renderCamList();syncGrid();}
+    if(m.type==='alarm') appendAlarm(m);
+    if(m.type==='iot_data') onMqttData(m.data);
+    if(m.type==='ai_detection') onAiDetection(m);
+  };
+  ws.onclose=()=>setTimeout(connectWS,3000);
+}
+
+// Kameralar
+async function loadCameras(){
+  try{ const r=await fetch(`${API}/cameras`); cameras=await r.json(); renderCamList(); renderGrid(); }
+  catch{ showMsg('FastAPI bağlantısı yok','warn'); }
+}
+
+function renderCamList(){
+  document.getElementById('cam-list').innerHTML=cameras.map(c=>`
+    <div class="cam-item ${c.streaming?'streaming':''}" onclick="focusCam('${c.id}')">
+      <div style="display:flex;align-items:center">
+        <span class="cam-dot"></span><span class="cam-name">${c.name}</span>
+      </div>
+      <div class="cam-loc">${c.location}</div>
+      <div class="cam-tags">
+        ${c.streaming
+          ?`<span class="tag t-whep">WHEP</span><span class="tag t-rec">REC</span><span class="tag t-lat">~200ms</span>`
+          :`<span class="tag t-off">Offline</span>`}
+      </div>
+    </div>`).join('');
+  document.getElementById('stream-count').textContent=cameras.filter(c=>c.streaming).length;
+}
+
+// Grid
+function renderGrid(){
+  document.getElementById('video-grid').innerHTML=cameras.map(cam=>`
+    <div class="vcell" id="vcell-${cam.id}">
+      <div class="vcell-top" style="position:relative">
+        <div class="vcell-hdr">
+          <div class="vcell-name">
+            <span class="rec-dot" id="recdot-${cam.id}" style="display:none"></span>
+            ${cam.name}
+          </div>
+          <span id="vstatus-${cam.id}" style="font-size:9px;color:rgba(255,255,255,.7)">offline</span>
+        </div>
+        <div class="ai-banner" id="ai-banner-${cam.id}"></div>
+        <div id="vmedia-${cam.id}" style="position:relative">
+          <div class="ph"><div class="ph-icon">📷</div><div>Yayın bekleniyor...</div></div>
+        </div>
+        <canvas class="ai-overlay" id="ai-canvas-${cam.id}"></canvas>
+        <span class="ai-badge" id="ai-badge-${cam.id}">🔥 AI</span>
+      </div>
+      <div class="vcell-footer">
+        <div class="vcell-meta">
+          <span>${cam.location}</span>
+          <span class="lat-pill" id="lat-${cam.id}">--</span>
+        </div>
+        <div class="vcell-btns">
+          <button class="icon-btn" onclick="connectWHEP('${cam.id}')" title="WHEP bağlan">⚡</button>
+          <button class="icon-btn" onclick="toggleFs('${cam.id}')" title="Tam ekran">⛶</button>
+        </div>
+      </div>
+    </div>`).join('');
+  cameras.forEach(c=>{ if(c.streaming) connectStream(c.id); });
+}
+
+function syncGrid(){
+  cameras.forEach(c=>{
+    const cell=document.getElementById(`vcell-${c.id}`);
+    const dot=document.getElementById(`recdot-${c.id}`);
+    if(!cell) return;
+    cell.classList.toggle('live',c.streaming);
+    if(dot) dot.style.display=c.streaming?'inline-block':'none';
+    if(c.streaming && !viewerPCs[c.id] && !hlsInst[c.id]) connectStream(c.id);
+  });
+  document.getElementById('stream-count').textContent=cameras.filter(c=>c.streaming).length;
+}
+
+function connectStream(id){ proto==='whep'?connectWHEP(id):connectHLS(id); }
+
+// WHEP (~200ms)
+async function connectWHEP(camId){
+  if(viewerPCs[camId]){viewerPCs[camId].close();delete viewerPCs[camId];}
+  const pc=new RTCPeerConnection(ICE);
+  viewerPCs[camId]=pc;
+  pc.addTransceiver('video',{direction:'recvonly'});
+  pc.addTransceiver('audio',{direction:'recvonly'});
+  const stream=new MediaStream();
+  pc.ontrack=e=>{ stream.addTrack(e.track); attachVideo(camId,stream); };
+  pc.onconnectionstatechange=()=>{
+    const s=pc.connectionState;
+    const el=document.getElementById(`vstatus-${camId}`);
+    if(el){
+      const map={connected:'⚡ WHEP',connecting:'bağlanıyor...',disconnected:'kesildi',failed:'hata'};
+      el.textContent=map[s]||s;
+      el.style.color=s==='connected'?'#6ee7b7':s==='failed'?'#fca5a5':'rgba(255,255,255,.7)';
+    }
+    if(s==='connected') measureLatency(camId);
+  };
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await new Promise(res=>{
+    if(pc.iceGatheringState==='complete'){res();return;}
+    pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete')res();};
+    setTimeout(res,2000);
+  });
+  try{
+    const resp=await fetch(`${WHEP_BASE}/${camId}/whep`,{method:'POST',headers:{'Content-Type':'application/sdp'},body:pc.localDescription.sdp});
+    if(!resp.ok) throw new Error(`WHEP ${resp.status}`);
+    await pc.setRemoteDescription({type:'answer',sdp:await resp.text()});
+  } catch(e){
+    showMsg(`WHEP başarısız (${camId}) — stream aktif mi?`,'warn');
+    delete viewerPCs[camId];
+  }
+}
+
+function measureLatency(camId){
+  const pc=viewerPCs[camId]; if(!pc) return;
+  setInterval(async()=>{
+    const stats=await pc.getStats();
+    stats.forEach(s=>{
+      if(s.type==='inbound-rtp'&&s.kind==='video'&&s.jitterBufferDelay&&s.jitterBufferEmittedCount){
+        const ms=Math.round(s.jitterBufferDelay/s.jitterBufferEmittedCount*1000);
+        const el=document.getElementById(`lat-${camId}`);
+        if(el&&!isNaN(ms)) el.textContent=`~${ms}ms`;
+      }
+    });
+  },3000);
+}
+
+// HLS fallback
+function connectHLS(camId){
+  const wrap=document.getElementById(`vmedia-${camId}`); if(!wrap) return;
+  let vid=wrap.querySelector('video');
+  if(!vid){
+    vid=document.createElement('video');
+    vid.autoplay=true;vid.muted=true;vid.playsInline=true;
+    vid.style.cssText='width:100%;aspect-ratio:16/9;object-fit:cover;background:#1a1d2e;display:block;cursor:pointer';
+    vid.ondblclick=()=>toggleFs(camId);
+    wrap.innerHTML=''; wrap.appendChild(vid);
+  }
+  const url=`${HLS_BASE}/${camId}/index.m3u8`;
+  if(window.Hls&&Hls.isSupported()){
+    const hls=new Hls({lowLatencyMode:true,backBufferLength:10,maxBufferLength:5});
+    hls.loadSource(url); hls.attachMedia(vid);
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>vid.play().catch(()=>{}));
+    hlsInst[camId]=hls;
+  } else if(vid.canPlayType('application/vnd.apple.mpegurl')){
+    vid.src=url; vid.play().catch(()=>{});
+  }
+  const el=document.getElementById(`vstatus-${camId}`);
+  if(el){el.textContent='📺 HLS';el.style.color='rgba(255,255,255,.7)';}
+}
+
+function attachVideo(camId,stream){
+  const wrap=document.getElementById(`vmedia-${camId}`); if(!wrap) return;
+  let vid=wrap.querySelector('video');
+  if(!vid){
+    vid=document.createElement('video');
+    vid.autoplay=true;vid.playsInline=true;
+    vid.style.cssText='width:100%;aspect-ratio:16/9;object-fit:cover;background:#1a1d2e;display:block;cursor:pointer';
+    vid.ondblclick=()=>toggleFs(camId);
+    wrap.innerHTML=''; wrap.appendChild(vid);
+  }
+  vid.srcObject=stream; vid.play().catch(()=>{});
+}
+
+// Protokol değiştir
+function setProto(p){
+  proto=p;
+  ['whep','hls'].forEach(x=>document.getElementById(`pb-${x}`)?.classList.toggle('active',x===p));
+  document.getElementById('proto-label').textContent=p==='whep'?'⚡ WHEP ~200ms':'📺 HLS ~2-4s';
+  Object.values(viewerPCs).forEach(pc=>pc.close()); viewerPCs={};
+  Object.values(hlsInst).forEach(h=>h.destroy?.()); hlsInst={};
+  cameras.filter(c=>c.streaming).forEach(c=>connectStream(c.id));
+}
+
+// WHIP yayın
+async function initPreview(){
+  try{ localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('local-preview').srcObject=localStream; }
+  catch(e){ showMsg('Kamera erişimi yok: '+e.message,'warn'); }
+}
+
+async function startBroadcast(){
+  if(!localStream){showMsg('Kamera erişimi gerekli!','warn');return;}
+  const ch=document.getElementById('bcast-ch').value;
+  whipPC=new RTCPeerConnection(ICE);
+  localStream.getTracks().forEach(t=>whipPC.addTrack(t,localStream));
+  const offer=await whipPC.createOffer();
+  await whipPC.setLocalDescription(offer);
+  await new Promise(res=>{
+    if(whipPC.iceGatheringState==='complete'){res();return;}
+    whipPC.onicegatheringstatechange=()=>{if(whipPC.iceGatheringState==='complete')res();};
+    setTimeout(res,3000);
+  });
+  try{
+    const resp=await fetch(`${WHIP_BASE}/${ch}/whip`,{method:'POST',headers:{'Content-Type':'application/sdp'},body:whipPC.localDescription.sdp});
+    if(!resp.ok) throw new Error(`WHIP ${resp.status}: ${await resp.text()}`);
+    await whipPC.setRemoteDescription({type:'answer',sdp:await resp.text()});
+    document.getElementById('btn-bc').style.display='none';
+    document.getElementById('btn-stop').style.display='flex';
+    document.getElementById('stream-status').textContent=`⚡ ${ch} — CANLI`;
+    document.getElementById('stream-status').className='live';
+    showMsg(`✅ WHIP yayın başladı: ${ch}`,'success');
+    setTimeout(()=>connectWHEP(ch),2000);
+  } catch(e){ showMsg('WHIP başarısız: '+e.message,'danger'); whipPC.close(); whipPC=null; }
+}
+
+function stopBroadcast(){
+  if(whipPC){whipPC.close();whipPC=null;}
+  document.getElementById('btn-bc').style.display='flex';
+  document.getElementById('btn-stop').style.display='none';
+  document.getElementById('stream-status').textContent='⏸ Beklemede';
+  document.getElementById('stream-status').className='';
+}
+
+// IoT simülasyon
+const SENSORS=[
+  {id:'temp1', name:'Sıcaklık — Hat A', unit:'°C',  min:18,max:85, warn:70,danger:80, icon:'🌡️',color:'#f59e0b'},
+  {id:'hum1',  name:'Nem — Depo',       unit:'%',   min:20,max:95, warn:80,danger:90, icon:'💧',color:'#4f8ef7'},
+  {id:'gas1',  name:'Gaz — Kimyasal',   unit:'ppm', min:0, max:500,warn:200,danger:400,icon:'☁️',color:'#ef4444'},
+  {id:'vib1',  name:'Titreşim',         unit:'mm/s',min:0, max:20, warn:12,danger:17, icon:'📳',color:'#0eb8a0'},
+  {id:'smk1',  name:'Duman — Üretim',   unit:'%',   min:0, max:100,warn:40,danger:70, icon:'🔥',color:'#ef4444'},
+];
+let sVals={}, lastAl={};
+SENSORS.forEach(s=>{ sVals[s.id]=s.min+(s.max-s.min)*0.25; });
+
+let mqttActive = false;  // Gerçek MQTT gelirse simülasyonu durdur
+
+function initIoT(){
+  renderSensors();
+  // Simülasyon — MQTT bağlantısı yokken çalışır
+  setInterval(()=>{
+    if(mqttActive) return;  // Gerçek MQTT varsa simülasyonu atla
+    SENSORS.forEach(s=>{
+      const spike=Math.random()<0.04?(s.max-s.min)*0.4:0;
+      const d=(Math.random()-.48)*(s.max-s.min)*0.05+spike;
+      sVals[s.id]=Math.max(s.min,Math.min(s.max,sVals[s.id]+d));
+    });
+    renderSensors(); checkSensorAlarms();
+  },2500);
+}
+
+function onMqttData(data){
+  // Gerçek MQTT verisi geldi — simülasyonu devre dışı bırak
+  if(!mqttActive){
+    mqttActive = true;
+    document.getElementById('iot-status').textContent = '● MQTT canlı';
+    document.getElementById('iot-status').style.color = 'var(--success)';
+    // Simülasyon badge'i güncelle
+    const badge = document.querySelector('.tag.t-whep[style]');
+    if(badge){ badge.textContent = 'CANLI'; badge.style.background='#e8f8ef'; badge.style.color='#16a34a'; }
+  }
+  // Sensör değerlerini MQTT'den gelen veriyle güncelle
+  const map = {
+    temperature: 'temp1',
+    humidity:    'hum1',
+    gas:         'gas1',
+    vibration:   'vib1',
+    smoke:       'smk1',
+  };
+  Object.entries(map).forEach(([key, id]) => {
+    if(data[key] !== undefined) sVals[id] = data[key];
+  });
+  renderSensors();
+  // Alarmlar backend'den zaten geliyor (push_alarm), çift kontrol yapmıyoruz
+}
+
+function renderSensors(){
+  document.getElementById('iot-panel').innerHTML=SENSORS.map(s=>{
+    const v=sVals[s.id];
+    const pct=((v-s.min)/(s.max-s.min))*100;
+    const status=v>=s.danger?'danger':v>=s.warn?'warn':'ok';
+    const stText={ok:'Normal',warn:'Uyarı',danger:'Kritik'}[status];
+    const stCls={ok:'st-ok',warn:'st-warn',danger:'st-danger'}[status];
+    const fillColor=status==='danger'?'var(--danger)':status==='warn'?'var(--warn)':s.color;
+    const cardCls=status==='danger'?'danger-state':status==='warn'?'warn-state':'';
+    return `<div class="sensor-card ${cardCls}">
+      <div class="sc-row">
+        <span class="sc-name">${s.icon} ${s.name}</span>
+        <span class="sc-status ${stCls}">${stText}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:3px;margin-top:2px">
+        <span class="sc-val" style="color:${fillColor}">${v.toFixed(1)}</span>
+        <span class="sc-unit">${s.unit}</span>
+      </div>
+      <div class="sc-bar"><div class="sc-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function checkSensorAlarms(){
+  const now=Date.now();
+  SENSORS.forEach(s=>{
+    const v=sVals[s.id];
+    if(v>=s.danger&&(!lastAl[s.id]||now-lastAl[s.id]>15000)){
+      lastAl[s.id]=now;
+      const msg=`${s.icon} KRİTİK: ${s.name} — ${v.toFixed(1)} ${s.unit}`;
+      appendAlarm({level:'danger',message:msg,camera_name:'IoT',timestamp:new Date().toISOString()});
+      fetch(`${API}/alarms`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({camera_id:'iot',level:'danger',message:msg})}).catch(()=>{});
+    } else if(v>=s.warn&&v<s.danger&&(!lastAl[`${s.id}w`]||now-lastAl[`${s.id}w`]>30000)){
+      lastAl[`${s.id}w`]=now;
+      appendAlarm({level:'warning',message:`${s.icon} UYARI: ${s.name} — ${v.toFixed(1)} ${s.unit}`,camera_name:'IoT',timestamp:new Date().toISOString()});
+    }
+  });
+}
+
+// Alarmlar
+async function loadAlarms(){
+  const r=await fetch(`${API}/alarms`).catch(()=>null); if(!r) return;
+  (await r.json()).forEach(a=>appendAlarm(a));
+}
+
+async function sendAlarm(level){
+  const msg=prompt(level==='danger'?'🚨 Alarm mesajı:':'⚠ Uyarı mesajı:'); if(!msg) return;
+  const ch=document.getElementById('bcast-ch').value;
+  await fetch(`${API}/alarms`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({camera_id:ch,level,message:msg})}).catch(()=>{});
+}
+
+function appendAlarm(a){
+  const log=document.getElementById('alarm-log'); if(!log) return;
+  const cls={info:'al-info',warning:'al-warning',danger:'al-danger'}[a.level]||'al-info';
+  const d=document.createElement('div');
+  d.className=`al-item ${cls}`;
+  d.innerHTML=`<div class="al-msg">${a.message}</div><div class="al-time">${a.camera_name||''} · ${new Date(a.timestamp).toLocaleTimeString('tr-TR')}</div>`;
+  log.insertBefore(d,log.firstChild);
+  while(log.children.length>50) log.removeChild(log.lastChild);
+}
+
+// Kayıtlar
+async function openRec(){
+  document.getElementById('rec-modal').classList.add('open');
+  const r=await fetch(`${API}/recordings`).catch(()=>null);
+  const recs=r?await r.json():[];
+  document.getElementById('rec-empty').style.display=recs.length?'none':'block';
+  document.getElementById('rec-tbody').innerHTML=recs.map(rec=>{
+    const convBtn = rec.file.endsWith('.ts')
+      ? '<span style="color:var(--teal);cursor:pointer;font-size:10px;font-weight:600" '
+        + 'id="conv-'+rec.camera_id+'-'+rec.file.replace('.','_')+'" '
+        + 'onclick="convertToMp4(\'' + rec.camera_id + '\',\'' + rec.file + '\')">🔄 MP4e Cevir</span> &nbsp;'
+      : '';
+    return '<tr>'
+      + '<td>' + rec.camera_name + '</td>'
+      + '<td style="font-family:monospace;font-size:10px">' + rec.file + '</td>'
+      + '<td>' + rec.size_mb + ' MB</td>'
+      + '<td>' + new Date(rec.created).toLocaleString('tr-TR') + '</td>'
+      + '<td>'
+      + '<a href="' + rec.download_url + '" style="color:var(--accent);font-size:10px;font-weight:600">⬇ İndir</a> &nbsp;'
+      + convBtn
+      + '<span style="color:var(--danger);cursor:pointer;font-size:10px;font-weight:600" '
+      + 'onclick="delRec(\'' + rec.camera_id + '\',\'' + rec.file + '\')">🗑 Sil</span>'
+      + '</td></tr>';
+  }).join('');
+}
+function closeRec(){document.getElementById('rec-modal').classList.remove('open');}
+
+async function convertToMp4(camId, filename) {
+  const key = camId + '-' + filename.replace('.','_');
+  const el = document.getElementById('conv-' + key);
+  if (el) { el.textContent = '⏳ Dönüştürülüyor...'; el.style.pointerEvents='none'; }
+  
+  try {
+    const r = await fetch(`${API}/recordings/convert/${camId}/${filename}`, {method:'POST'});
+    const data = await r.json();
+    
+    if (data.status === 'started' || data.status === 'already_running') {
+      showMsg('⏳ Dönüşüm başladı: ' + data.output, 'info');
+      // Durumu kontrol et
+      const poll = setInterval(async () => {
+        const sr = await fetch(`${API}/recordings/convert-status/${camId}/${filename}`);
+        const sd = await sr.json();
+        if (sd.status === 'done') {
+          clearInterval(poll);
+          showMsg('✅ MP4 hazır: ' + data.output, 'success');
+          openRec(); // listeyi yenile
+        } else if (sd.status.startsWith('error')) {
+          clearInterval(poll);
+          showMsg('❌ Dönüşüm hatası: ' + sd.status, 'danger');
+          if (el) { el.textContent = '🔄 MP4e Cevir'; el.style.pointerEvents='auto'; }
+        }
+      }, 2000);
+    } else if (!r.ok) {
+      const err = await r.json();
+      showMsg('❌ ' + (err.detail || 'Hata'), 'danger');
+      if (el) { el.textContent = '🔄 MP4e Cevir'; el.style.pointerEvents='auto'; }
+    }
+  } catch(e) {
+    showMsg('❌ ' + e.message, 'danger');
+  }
+}
+async function delRec(c,f){
+  if(!confirm('Silinsin mi?')) return;
+  await fetch(`${API}/recordings/${c}/${f}`,{method:'DELETE'});
+  openRec();
+}
+
+// Sağlık
+async function checkHealth(){
+  try{
+    const h=await (await fetch(`${API}/health`)).json();
+    const ok=h.mediamtx==='up';
+    const chip=document.getElementById('health-chip');
+    chip.textContent=ok?'✅ MediaMTX':'❌ MediaMTX kapalı';
+    chip.className=ok?'':'down';
+  } catch{
+    const chip=document.getElementById('health-chip');
+    chip.textContent='⚠ FastAPI kapalı'; chip.className='down';
+  }
+}
+
+// Yardımcılar
+function setGrid(n){
+  document.getElementById('video-grid').className=`video-grid grid-${n}`;
+  ['g1','g4','g6'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
+  document.getElementById(`g${n}`)?.classList.add('active');
+}
+function focusCam(id){
+  setGrid(1);
+  document.querySelectorAll('.vcell').forEach(c=>c.style.display='none');
+  const cell=document.getElementById(`vcell-${id}`);
+  if(cell){cell.style.display='flex';}
+}
+function toggleFs(id){
+  const wrap=document.getElementById(`vmedia-${id}`);
+  const vid=wrap?.querySelector('video'); if(!vid) return;
+  document.fullscreenElement?document.exitFullscreen():vid.requestFullscreen().catch(()=>{});
+}
+function showMsg(text,type='info'){
+  const colors={info:['var(--purple-light)','var(--accent)'],success:['#edfbf3','var(--success)'],warn:['#fffbeb','var(--warn)'],danger:['#fef2f2','var(--danger)']};
+  const [bg,col]=colors[type]||colors.info;
+  const d=document.createElement('div');
+  d.style.cssText=`position:fixed;bottom:16px;right:16px;background:${bg};border:1.5px solid ${col};color:${col};padding:9px 15px;border-radius:10px;font-size:12px;z-index:400;max-width:300px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.1)`;
+  d.textContent=text; document.body.appendChild(d); setTimeout(()=>d.remove(),4000);
+}
+function onAiDetection(data){
+  const camId   = data.camera_id;
+  const preds   = data.predictions || [];
+  const hasFire = data.has_fire;
+  const hasSmoke= data.has_smoke;
+
+  // Video overlay KALDIRILDI — donmayı önlemek için
+  // Bunun yerine alttaki AI panel güncelleniyor
+
+  // Kamera kartındaki banner — sadece metin, frame yok
+  const banner = document.getElementById('ai-banner-' + camId);
+  if(banner){
+    if(hasFire){
+      banner.textContent='🔥 YANGIN ALGILANDI!';
+      banner.className='ai-banner fire';
+    } else if(hasSmoke){
+      banner.textContent='💨 DUMAN ALGILANDI!';
+      banner.className='ai-banner smoke';
+    } else {
+      banner.className='ai-banner';
+    }
+    // 3 saniye sonra banner'ı kaldır
+    clearTimeout(banner._t);
+    banner._t = setTimeout(()=>{ banner.className='ai-banner'; },3000);
+  }
+
+  const badge = document.getElementById('ai-badge-' + camId);
+  if(badge) badge.className = (hasFire||hasSmoke) ? 'ai-badge active' : 'ai-badge';
+
+  // AI Panel güncelle
+  if(!preds.length) return;
+
+  const panel = document.getElementById('ai-panel');
+  const det   = document.getElementById('ai-detections');
+  const timeEl= document.getElementById('ai-panel-time');
+  if(!panel||!det) return;
+
+  panel.classList.add('active');
+  if(timeEl) timeEl.textContent = new Date().toLocaleTimeString('tr-TR');
+
+  // Her tespit için kart oluştur
+  const camName = cameras.find(c=>c.id===camId)?.name || camId;
+  det.innerHTML = preds.map(p => {
+    const cls  = p.class || '?';
+    const conf = Math.round((p.confidence||0)*100);
+    const isF  = ['fire','Fire','flame','Flame'].includes(cls);
+    const isS  = ['smoke','Smoke'].includes(cls);
+    const cardCls = isF ? 'ai-det-fire' : isS ? 'ai-det-smoke' : 'ai-det-info';
+    const icon    = isF ? '🔥' : isS ? '💨' : '👁';
+    const fillClr = isF ? 'var(--danger)' : isS ? 'var(--warn)' : 'var(--accent)';
+    return '<div class="ai-det-card ' + cardCls + '">'
+      + '<div>'
+      + '<div>' + icon + ' ' + cls + ' <span style="font-size:9px;opacity:.7">%' + conf + '</span></div>'
+      + '<div class="ai-conf-bar"><div class="ai-conf-fill" style="width:' + conf + '%;background:' + fillClr + '"></div></div>'
+      + '</div>'
+      + '<div class="ai-cam-label">' + camName + '</div>'
+      + '</div>';
+  }).join('');
+
+  // 5 saniye sonra paneli temizle
+  clearTimeout(det._t);
+  det._t = setTimeout(()=>{
+    det.innerHTML = '<span style="font-size:11px;color:var(--muted)">Tespit bekleniyor...</span>';
+    panel.classList.remove('active');
+  }, 5000);
+}
+
+function startClock(){
+  setInterval(()=>{ document.getElementById('clock').textContent=new Date().toLocaleTimeString('tr-TR'); },1000);
+}
+</script>
+</body>
+</html>

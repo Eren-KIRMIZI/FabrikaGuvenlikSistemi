@@ -1,0 +1,43 @@
+api: yes
+apiAddress: :9997
+metrics: yes
+metricsAddress: :9998
+
+rtmp: yes
+rtmpAddress: :1935
+
+hls: yes
+hlsAddress: :8888
+hlsVariant: lowLatency
+hlsSegmentCount: 3
+hlsSegmentDuration: 500ms
+hlsPartDuration: 100ms
+hlsAllowOrigins: ['*']
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcAllowOrigins: ['*']
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: :8190
+webrtcIPsFromInterfaces: yes
+webrtcICEServers2:
+  - url: stun:stun.l.google.com:19302
+
+srt: yes
+srtAddress: :8890
+
+pathDefaults:
+  record: yes
+  recordPath: ./recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+  recordFormat: mpegts
+  recordSegmentDuration: 10m
+  recordDeleteAfter: 72h
+
+paths:
+  kamera1:
+    source: publisher
+  kamera2:
+    source: publisher
+  test:
+    source: publisher
+  all_others:
